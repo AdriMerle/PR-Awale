@@ -11,7 +11,7 @@ Une implémentation d'une application client/server du jeu Awale.
 # Liste de commandes :
 
 | Commande | Action |
-| -------- | ------ |
+| --- | --- |
 | /d | Affiche la liste des joueurs connectés
 | /c [username] | Challenge le joueur username   
 | /y | Accepte une invitation   
