@@ -397,15 +397,15 @@ static void analyze_message(Client* clients, Client* client, int actual, char* b
             break;
          case 'h': // Envoie la liste des commandes
             write_client(client->sock, "Liste des commandes :");
-            write_client(client->sock, "/d : Affiche la liste des joueurs connectés");
-            write_client(client->sock, "/c [username] : Challenge le joueur username");
-            write_client(client->sock, "/y : Accepte une invitation");
-            write_client(client->sock, "/n : Refuse une invitation");
-            write_client(client->sock, "/p [1-6] : Joue le coup [1-6]");
-            write_client(client->sock, "/a [description] : Modifie votre description");
-            write_client(client->sock, "/b [username] : Affiche la description du joueur 'username'");
-            write_client(client->sock, "/m [username] [message] : Envoie un message privé à 'username'");
-            write_client(client->sock, "/h : Affiche la liste des commandes");
+            write_client(client->sock, "\r\n/d : Affiche la liste des joueurs connectés");
+            write_client(client->sock, "\r\n/c [username] : Challenge le joueur username");
+            write_client(client->sock, "\r\n/y : Accepte une invitation");
+            write_client(client->sock, "\r\n/n : Refuse une invitation");
+            write_client(client->sock, "\r\n/p [1-6] : Joue le coup [1-6]");
+            write_client(client->sock, "\r\n/a [description] : Modifie votre description");
+            write_client(client->sock, "\r\n/b [username] : Affiche la description du joueur 'username'");
+            write_client(client->sock, "\r\n/m [username] [message] : Envoie un message privé à 'username'");
+            write_client(client->sock, "\r\n/h : Affiche la liste des commandes");
 
             break;
          default:
