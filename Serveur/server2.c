@@ -355,7 +355,24 @@ static void analyze_message(Client* clients, Client* client, int actual, char* b
                display_match(client);
             }
             break;
-         case 'h':
+         case 'a': // Modifie la description du client
+            strncpy(client->description, &buffer[3], nb_char);
+            client->description[nb_char - 3] = '\0';
+            write_client(client->sock, "Description modifiée !");
+            break;
+         case 'b': // renvoie la description d'un client
+            char username[USERNAME_SIZE];
+            strncpy(username, &buffer[3], nb_char);
+            username[nb_char - 3] = '\0';
+            Client* opponent = find_client_by_name(clients, actual, username);
+            if(opponent==NULL) {
+               write_client(client->sock, "Aucun joueur avec ce nom :/");
+            } else {
+               write_client(client->sock, "La description est : ");
+               write_client(client->sock, opponent->description);
+            }
+            break;
+         case 'h': // Help
             // TO DO
             break;
          default:

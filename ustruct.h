@@ -1,4 +1,5 @@
 #define USERNAME_SIZE 20
+#define BUF_SIZE    1024
 typedef int SOCKET;
 
 #include <stdio.h>
@@ -23,4 +24,5 @@ typedef struct Client
    struct Client* opponent;
    struct Match* match_en_cours; 
    int player_id;
+   char description[BUF_SIZE];
 } Client;
