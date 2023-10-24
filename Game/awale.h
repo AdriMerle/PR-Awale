@@ -1,7 +1,7 @@
 #ifndef AWALE_H
 #define AWALE_H
 
-#include "ustruct.h"
+#include "../Utils/ustruct.h"
 
 // Game actions
 void copy(AwaleGame* source, AwaleGame* destination); // Copies the game

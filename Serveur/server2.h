@@ -35,7 +35,7 @@ typedef struct in_addr IN_ADDR;
 #define USERNAME_SIZE 20
 #define MAX_MATCHS 100
 
-#include "../ustruct.h"
+#include "../Utils/ustruct.h"
 
 static void init(void);
 static void end(void);

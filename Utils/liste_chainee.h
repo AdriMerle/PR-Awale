@@ -3,8 +3,6 @@
 
 #include "ustruct.h"
 
-
-
 void display(Match* head);
 void add_head(Match* head, Match* new);
 void delete(Match* head, Match* to_delete);
