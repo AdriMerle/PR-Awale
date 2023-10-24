@@ -309,6 +309,8 @@ static void challenge(Client* clients, Client* client, int actual, char* buffer,
 }
 
 static void analyze_message(Client* clients, Client* client, int actual, char* buffer, int nb_char) {
+   char username[USERNAME_SIZE];
+   Client* client2;
    if(buffer[0]=='/') {
       printf("Command %s\n", buffer);
       switch (buffer[1]) {
@@ -361,17 +363,36 @@ static void analyze_message(Client* clients, Client* client, int actual, char* b
             write_client(client->sock, "Description modifiée !");
             break;
          case 'b': // renvoie la description d'un client
-            char username[USERNAME_SIZE];
             strncpy(username, &buffer[3], nb_char);
             username[nb_char - 3] = '\0';
-            Client* opponent = find_client_by_name(clients, actual, username);
-            if(opponent==NULL) {
+            client2 = find_client_by_name(clients, actual, username);
+            if(client2==NULL) {
                write_client(client->sock, "Aucun joueur avec ce nom :/");
-            } else if (strcmp(opponent->description, "")==0) {
+            } else if (strcmp(client2->description, "")==0) {
                write_client(client->sock, "Ce joueur n'a pas de description :(");
             } else {
                write_client(client->sock, "La description est : ");
-               write_client(client->sock, opponent->description);
+               write_client(client->sock, client2->description);
+            }
+            break;
+         case 'm' : // Envoie un message privé
+            // format de la requête : /m username message
+            // obtenir la position du deuxième espace
+            int i = 3;
+            while(buffer[i]!=' ') {
+               i++;
+            }
+            strncpy(username, &buffer[3], i-3);
+            username[i-3] = '\0';
+            client2 = find_client_by_name(clients, actual, username);
+            if(client2==NULL) {
+               write_client(client->sock, "Aucun joueur avec ce nom :/");
+            } else {
+               char message[BUF_SIZE] = "Message privé de ";
+               strncat(message, client->name, sizeof message - strlen(message) - 1);
+               strncat(message, " : ", sizeof message - strlen(message) - 1);
+               strncat(message, &buffer[i+1], sizeof message - strlen(message) - 1);
+               write_client(client2->sock, message);
             }
             break;
          case 'h': // Help
