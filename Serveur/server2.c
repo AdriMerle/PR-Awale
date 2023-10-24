@@ -367,6 +367,8 @@ static void analyze_message(Client* clients, Client* client, int actual, char* b
             Client* opponent = find_client_by_name(clients, actual, username);
             if(opponent==NULL) {
                write_client(client->sock, "Aucun joueur avec ce nom :/");
+            } else if (strcmp(opponent->description, "")==0) {
+               write_client(client->sock, "Ce joueur n'a pas de description :(");
             } else {
                write_client(client->sock, "La description est : ");
                write_client(client->sock, opponent->description);
