@@ -10,17 +10,10 @@ void display(Match* head){
     else printf("End of list.\r\n");
 }
 
-<<<<<<< HEAD
 void add_head(Match** head, Match* new){
     new->next=*head; 
     *head=new;
-=======
-void add_head(Match* head, Match* elem){
-    new->next=head; 
-    head=new;
->>>>>>> f1deaaf3a3b74b495de423d45a3bbee51fb097a7
 }
-
 
 void clear_all_matches(Match* head){
     Match* p = head;
@@ -28,7 +21,7 @@ void clear_all_matches(Match* head){
     while(p!=NULL){//while not at the end
         temp = p;
         p = p->next;
-        free(temp->game));
+        free(temp->game);
         free(temp);
     }
 }

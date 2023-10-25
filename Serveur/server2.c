@@ -360,17 +360,27 @@ static void analyze_message(Client* clients, Client* client, int actual, char* b
             send_usernames_to_client(clients, client->sock, actual);
             break;
          case 'g' : //List all the current games that are played
-            Match* m = head;
-            display(m);
-            if (m == NULL) {
-               write_client(client->sock, "Aucun jeu en cours.");
-            } else {
-               while (m != NULL) {
-                  if (m->en_cours)
-                     display_match_player_observer(m, client);
-                     display(m);
-                  m = m->next;
+            if(client->match_en_cours==NULL){
+               Match* m = head;
+               char message[BUF_SIZE];
+               if (m == NULL) {
+                  write_client(client->sock, "Aucun jeu en cours.");
+               } else {
+                  while (m != NULL) {
+                     if (m->en_cours) {
+                        strcat(message, "Partie en cours entre ");
+                        strcat(message, m->game->playerA);
+                        strcat(message, " et ");
+                        strcat(message, m->game->playerB);
+                        strcat(message, ".\n");
+                        write_client(client->sock, message);
+                     }
+                     m = m->next;
+                     memset(message, 0, sizeof(message));
+                  }
                }
+            } else {
+               write_client(client->sock, "Action impossible, tu as déjà une partie en cours :(");
             }
             break;
          case 'h': // Display help
@@ -414,6 +424,10 @@ static void analyze_message(Client* clients, Client* client, int actual, char* b
             }else {
                write_client(client->sock, "Tu n'as aucune invitation en cours :(");
             }
+            break;
+         case 'o': // To observe the match of a player
+            // Syntax : /o [username]
+
             break;
          case 'p':
             if (client->match_en_cours==NULL){
@@ -463,9 +477,6 @@ static void analyze_message(Client* clients, Client* client, int actual, char* b
                match->game = malloc(sizeof(AwaleGame));
                match->en_cours = 1;
                add_head(&head, match);
-               //printf("HEAD->encours .%d.\n", h->en_coureads);
-               display(head);
-               display(match);
                init_game(match->game, client->name, client->opponent->name);
                display_match_player(client);
             }else {
