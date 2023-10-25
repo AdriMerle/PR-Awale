@@ -310,6 +310,14 @@ static void challenge(Client* clients, Client* client, int actual, char* buffer,
    client->opponent = opponent;
 }
 
+static void display_match_player_observer(Match* match, Client* client){
+   write_client(client->sock, "Une partie est en cours entre ");
+   write_client(client->sock, match->game->playerA);
+   write_client(client->sock, " et ");
+   write_client(client->sock, match->game->playerB);
+   write_client(client->sock, ".\n");
+}
+
 static void analyze_message(Client* clients, Client* client, int actual, char* buffer, int nb_char) {
    char username[USERNAME_SIZE];
    Client* client2;
@@ -351,19 +359,14 @@ static void analyze_message(Client* clients, Client* client, int actual, char* b
             send_usernames_to_client(clients, client->sock, actual);
             break;
          case 'g' : //List all the current games that are played
-            Match* p = head;
-            if (p == NULL) {
+            Match* m = head;
+            if (m == NULL) {
                write_client(client->sock, "Aucun jeu en cours.");
             } else {
-               while (p != NULL) {
-                  write_client(client->sock, "Une partie est en cours entre ");
-                  // write_client(client->sock, p->playerA->name);
-                  // write_client(client->sock, " et ");
-                  // write_client(client->sock, p->game->playerB->name);
-                  // write_client(client->sock, ".\n");
-                  // display_match_player_observer(p->game, client);
-                  write_client(client->sock, "=================================\n");
-                  p = p->next;
+               while (m != NULL) {
+                  if (m->en_cours)
+                     display_match_player_observer(m, client);
+                  m = m->next;
                }
             }
             break;
@@ -377,6 +380,7 @@ static void analyze_message(Client* clients, Client* client, int actual, char* b
             write_client(client->sock, "\r\n/a [description] : Modifie votre description");
             write_client(client->sock, "\r\n/b [username] : Affiche la description du joueur 'username'");
             write_client(client->sock, "\r\n/m [username] [message] : Envoie un message privé à 'username'");
+            write_client(client->sock, "\r\n/g : Affiche la liste des parties en cours");
             write_client(client->sock, "\r\n/h : Affiche la liste des commandes");
             break;
          case 'm' : // Send private message
@@ -426,6 +430,22 @@ static void analyze_message(Client* clients, Client* client, int actual, char* b
                   write_client(client->sock, "Coup invalide. Donnez un chiffre entre 1 et 6.");
                } else {
                   display_match_player(client);
+                  int resultat = get_winner(client->match_en_cours->game);
+                  if (resultat==0){
+                     write_client(client->sock, "Vous avez gagné !");
+                     write_client(client->opponent->sock, "Vous avez perdu :(");
+                     client->opponent->opponent = NULL;
+                     client->opponent = NULL;
+                     client->match_en_cours->en_cours = 0;
+                     client->match_en_cours = NULL;
+                  }else if (resultat==-2){   
+                     write_client(client->sock, "Egalité !");
+                     write_client(client->opponent->sock, "Egalité !");
+                     client->opponent->opponent = NULL;
+                     client->opponent = NULL;
+                     client->match_en_cours->en_cours = 0;
+                     client->match_en_cours = NULL;
+                  }
                }
             }
             break;
@@ -438,8 +458,11 @@ static void analyze_message(Client* clients, Client* client, int actual, char* b
                client->opponent->player_id = 1;
                client->opponent->match_en_cours = match;
                match->game = malloc(sizeof(AwaleGame));
+               match->en_cours = 1;
                add_head(head, match);
                init_game(match->game, client->name, client->opponent->name);
+               printf("Game initialized\n");
+               printf(match);
                display_match_player(client);
             }else {
                write_client(client->sock, "Tu n'as aucune invitation en cours :(");
@@ -470,9 +493,3 @@ static void display_match_player(Client* client){
    }
 }
 
-//static void display_match_player_observer(AwaleGame* game, Client* client){
-//   char board[BUF_SIZE];
-//   memset(board, 0, sizeof(board));
-//   get_board(game, board);
-//   write_client(client->sock, board);
-//}

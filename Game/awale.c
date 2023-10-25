@@ -47,9 +47,9 @@ void init_game(AwaleGame* game, char* playerA, char* playerB) {
 
 void get_board(const AwaleGame* game, char* board) {
 	char buffer[1024];
-	strcat(board,"\n    1 2 3 4 5 6\n");
-	strcat(board,"  +-------------+\n");
-	strcat(board,"  |");
+	strcat(board,"\n     1 2 3 4 5 6\n");
+	strcat(board,"   +-------------+\n");
+	strcat(board,"   |");
 	for (int j = 5; j >= 0; j--) {
 		strcat(board," ");
 		sprintf(&buffer, "%d", game->board[0][j]);
@@ -57,7 +57,7 @@ void get_board(const AwaleGame* game, char* board) {
 	}
 	strcat(board," | ");
 	strcat(board, game->playerA);
-	strcat(board, "\n  |");
+	strcat(board, "\n   |");
 	for (int j = 0; j < 6; j++) {
 		strcat(board," ");
 		sprintf(&buffer, "%d", game->board[1][j]);
@@ -67,13 +67,13 @@ void get_board(const AwaleGame* game, char* board) {
 	strcat(board, game->playerB);
 	strcat(board, "\n");
 
-	strcat(board,"  +-------------+\n");
-	strcat(board, "|score| ");
+	strcat(board,"   +-------------+\n");
+	strcat(board, "|Score de ");
 	strcat(board, game->playerA);
-	strcat(board, " :");
+	strcat(board, " : ");
 	sprintf(&buffer, "%d", game->score[0]);
 	strcat(board, &buffer);
-	strcat(board, " |score| ");
+	strcat(board, " |Score de ");
 	strcat(board, game->playerB);
 	strcat(board, " : ");
 	sprintf(&buffer, "%d", game->score[1]);

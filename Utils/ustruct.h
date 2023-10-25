@@ -17,6 +17,7 @@ typedef struct {
 typedef struct Match {
 	AwaleGame* game;
 	struct Match* next;
+   int en_cours;
 } Match;
 
 typedef struct Client
