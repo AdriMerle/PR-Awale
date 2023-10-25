@@ -425,10 +425,13 @@ static void analyze_message(Client* clients, Client* client, int actual, char* b
                write_client(client->sock, "Aucun joueur avec ce nom :/");
             } else if (client2->match_en_cours==NULL) {
                write_client(client->sock, "Ce joueur n'a aucune partie en cours :(");
-            } else {
-               // Ajouter client à la liste des observateurs
+            } else if(client2->match_en_cours->nb_observers==MAX_OBSERVERS){
+               write_client(client->sock, "La partie est déjà observée par le nombre maximum d'observateurs :(");
+               break;
+            } else { // Ajouter client à la liste des observateurs
                client2->match_en_cours->sockObservers[client2->match_en_cours->nb_observers] = client->sock;
                client2->match_en_cours->nb_observers++;
+               write_client(client->sock, "Vous avez été ajouté à la liste des observateurs !");
             }
             break;
          case 'p':
@@ -487,6 +490,7 @@ static void analyze_message(Client* clients, Client* client, int actual, char* b
                   client2->match_en_cours->sockObservers[j] = client2->match_en_cours->sockObservers[j+1];
                }
                client2->match_en_cours->nb_observers--;
+               write_client(client->sock, "Vous avez été retiré de la liste des observateurs !");
             }
             break;
          case 'y': // Accept challenge
