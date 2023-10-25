@@ -53,5 +53,6 @@ static void analyze_message(Client* clients, Client* client, int actual, char* b
 static Client* find_client_by_name(Client* clients, int actual, char* username);
 static void challenge(Client* clients, Client* client, int actual, char* buffer, int nb_char);
 static void display_match(Client* client);
+static void display_help(Client* client);
 
 #endif /* guard */

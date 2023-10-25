@@ -305,14 +305,15 @@ static void challenge(Client* clients, Client* client, int actual, char* buffer,
    }
    char message[BUF_SIZE] = "Le joueur ";
    strncat(message, client->name, sizeof message - strlen(message) - 1);
-   strncat(message, " vous défie ! Acceptez-vous (y/n) ?", sizeof message - strlen(message) - 1);
+   strncat(message, " vous défie ! Acceptez-vous (/y ou /n) ?", sizeof message - strlen(message) - 1);
    write_client(opponent->sock, message);
    opponent->opponent = client;
    client->opponent = opponent;
 }
 
 static void analyze_message(Client* clients, Client* client, int actual, char* buffer, int nb_char) {
-   char username[USERNAME_SIZE];
+   char username[USERNAME_SIZE] = "";
+   char message[BUF_SIZE] = "";
    Client* client2;
    if(buffer[0]=='/') {
       printf("%s | %s\n", client->name,  buffer);
@@ -354,7 +355,6 @@ static void analyze_message(Client* clients, Client* client, int actual, char* b
          case 'g' : //List all the current games that are played
             if(client->match_en_cours==NULL){
                Match* m = head;
-               char message[BUF_SIZE];
                if (m == NULL) {
                   write_client(client->sock, "Aucun jeu en cours.");
                } else {
@@ -376,17 +376,7 @@ static void analyze_message(Client* clients, Client* client, int actual, char* b
             }
             break;
          case 'h': // Display help
-            write_client(client->sock, "Liste des commandes :");
-            write_client(client->sock, "\r\n/d : Affiche la liste des joueurs connectés");
-            write_client(client->sock, "\r\n/c [username] : Challenge le joueur username");
-            write_client(client->sock, "\r\n/y : Accepte une invitation");
-            write_client(client->sock, "\r\n/n : Refuse une invitation");
-            write_client(client->sock, "\r\n/p [1-6] : Joue le coup [1-6]");
-            write_client(client->sock, "\r\n/a [description] : Modifie votre description");
-            write_client(client->sock, "\r\n/b [username] : Affiche la description du joueur 'username'");
-            write_client(client->sock, "\r\n/m [username] [message] : Envoie un message privé à 'username'");
-            write_client(client->sock, "\r\n/g : Affiche la liste des parties en cours");
-            write_client(client->sock, "\r\n/h : Affiche la liste des commandes");
+            display_help(client);
             break;
          case 'm' : // Send private message
             int i = 3; // Get starting index of private message
@@ -509,9 +499,10 @@ static void analyze_message(Client* clients, Client* client, int actual, char* b
             }else {
                write_client(client->sock, "Tu n'as aucune invitation en cours :(");
             }
-
             break;
          default:
+            write_client(client->sock, "Commande inconnue :(\n");
+            display_help(client);
             break;
       }
    } else {
@@ -522,8 +513,7 @@ static void analyze_message(Client* clients, Client* client, int actual, char* b
 }
 
 static void display_match(Client* client){
-   char board[BUF_SIZE];
-   memset(board, 0, sizeof(board));
+   char board[BUF_SIZE] = "";
    get_board(client->match_en_cours->game, board);
    write_client(client->sock, board);
    write_client(client->opponent->sock, board);
@@ -541,3 +531,20 @@ static void display_match(Client* client){
    }
 }
 
+static void display_help(Client* client) {
+   char message[BUF_SIZE] = "";
+   strcat(message, "Liste des commandes :\n");
+   strcat(message, "/a [description] : Modifie votre description\n");
+   strcat(message, "/b [username] : Affiche la description du joueur 'username'\n");
+   strcat(message, "/c [username] : Challenge le joueur username\n");
+   strcat(message, "/d : Affiche la liste des joueurs connectés\n");
+   strcat(message, "/g : Affiche la liste des parties en cours\n");
+   strcat(message, "/h : Affiche la liste des commandes\n");
+   strcat(message, "/m [username] [message] : Envoie un message privé à 'username'\n");
+   strcat(message, "/n : Refuse une invitation\n");
+   strcat(message, "/o [username] : Observe la partie du joueur 'username'\n");
+   strcat(message, "/p [1-6] : Joue le coup [1-6]\n");
+   strcat(message, "/q [username] : Arrête d'observer la partie du joueur 'username'\n");
+   strcat(message, "/y : Accepte une invitation\n");
+   write_client(client->sock, message);
+}
