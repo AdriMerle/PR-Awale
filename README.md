@@ -1,6 +1,8 @@
 # PR-Awale
 Une implémentation d'une application client/server du jeu Awale.
 
+Par Antonin Sibileau et Adrian Merle.
+
 # Lancement de l'application
 **Côté serveur :**
 ./server
@@ -10,7 +12,6 @@ Une implémentation d'une application client/server du jeu Awale.
 
 # Liste des commandes
 
-## Commandes de jeu
 | Commande | Action |
 | --- | --- |
 | /a [description] | Modifie votre description |
