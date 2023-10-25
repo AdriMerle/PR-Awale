@@ -40,7 +40,7 @@ void delete(Match* head, Match* to_delete){
     }
 }
 
-void clear_matches(Match* head){
+void clear_all_matches(Match* head){
     Match* p = head;
     Match* temp;
     while(p!=NULL){//while not at the end
