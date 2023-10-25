@@ -133,6 +133,7 @@ static void app(void)
    }
 
    clear_clients(clients, actual);
+   clear_matches(head);
    end_connection(sock);
 }
 
