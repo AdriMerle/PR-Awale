@@ -29,6 +29,7 @@ static void end(void)
 
 static void app(void)
 {
+   head = NULL;
    SOCKET sock = init_connection();
    char buffer[BUF_SIZE];
    /* the index for the array */
@@ -67,8 +68,7 @@ static void app(void)
       {
          /* stop process when type on keyboard */
          break;
-      }
-      else if(FD_ISSET(sock, &rdfs))
+      }else if(FD_ISSET(sock, &rdfs))
       {
          /* new client */
          SOCKADDR_IN csin = { 0 };
@@ -361,12 +361,14 @@ static void analyze_message(Client* clients, Client* client, int actual, char* b
             break;
          case 'g' : //List all the current games that are played
             Match* m = head;
+            display(m);
             if (m == NULL) {
                write_client(client->sock, "Aucun jeu en cours.");
             } else {
                while (m != NULL) {
                   if (m->en_cours)
                      display_match_player_observer(m, client);
+                     display(m);
                   m = m->next;
                }
             }
@@ -453,17 +455,18 @@ static void analyze_message(Client* clients, Client* client, int actual, char* b
          case 'y': // Accept challenge
             if (client->opponent != NULL){
                printf("Une partie est lancée entre %s et %s !\n", client->name, client->opponent->name);
-               Match* match = malloc(sizeof(Match));
+               Match* match = (Match*) malloc(sizeof(Match));
                client->match_en_cours = match;
+               client->opponent->match_en_cours = match;
                client->player_id = 0;
                client->opponent->player_id = 1;
-               client->opponent->match_en_cours = match;
                match->game = malloc(sizeof(AwaleGame));
                match->en_cours = 1;
-               add_head(head, match);
+               add_head(&head, match);
+               //printf("HEAD->encours .%d.\n", h->en_coureads);
+               display(head);
+               display(match);
                init_game(match->game, client->name, client->opponent->name);
-               printf("Game initialized\n");
-               printf(match);
                display_match_player(client);
             }else {
                write_client(client->sock, "Tu n'as aucune invitation en cours :(");
