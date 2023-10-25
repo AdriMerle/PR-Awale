@@ -3,6 +3,7 @@
 void display(Match* head){
     Match* p = head;
     while (p!=NULL){//check if list is empty or if we are at the end
+        printf("%d\r\n", p->game->score[0]);
         p = p->next;
     }
     if(p==head) printf("List is empty.\r\n");
