@@ -29,7 +29,7 @@
 // 	return 0;
 // }
 
-void init_game(AwaleGame* game) {
+void init_game(AwaleGame* game, char* playerA, char* playerB) {
 	// Set the board to its initial configuration
 	for (int i = 0; i < 2; i++) {
 		for (int j = 0; j < 6; j++) {
@@ -41,31 +41,41 @@ void init_game(AwaleGame* game) {
 	// Set the score to 0
 	game->score[0] = 0;
 	game->score[1] = 0;
+	strcpy(game->playerA, playerA);
+	strcpy(game->playerB, playerB);
 }
 
 void get_board(const AwaleGame* game, char* board) {
+	char buffer[1024];
 	strcat(board,"\n    1 2 3 4 5 6\n");
 	strcat(board,"  +-------------+\n");
-	strcat(board,"A |");
-	char buffer[1024];
+	strcat(board,"  |");
 	for (int j = 5; j >= 0; j--) {
 		strcat(board," ");
 		sprintf(&buffer, "%d", game->board[0][j]);
 		strcat(board, &buffer);
 	}
-	strcat(board," |\nB |");
+	strcat(board," | ");
+	strcat(board, game->playerA);
+	strcat(board, "\n  |");
 	for (int j = 0; j < 6; j++) {
 		strcat(board," ");
 		sprintf(&buffer, "%d", game->board[1][j]);
 		strcat(board, &buffer);
 	}
-	strcat(board," |\n");
+	strcat(board," | ");
+	strcat(board, game->playerB);
+	strcat(board, "\n");
 
 	strcat(board,"  +-------------+\n");
-	strcat(board, "|score| A :");
+	strcat(board, "|score| ");
+	strcat(board, game->playerA);
+	strcat(board, " :");
 	sprintf(&buffer, "%d", game->score[0]);
 	strcat(board, &buffer);
-	strcat(board, " | B : ");
+	strcat(board, " |score| ");
+	strcat(board, game->playerB);
+	strcat(board, " : ");
 	sprintf(&buffer, "%d", game->score[1]);
 	strcat(board, &buffer);
 	strcat(board,"\n");

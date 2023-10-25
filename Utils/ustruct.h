@@ -10,6 +10,8 @@ typedef struct {
 	int board[2][6]; // the board, with 2 rows and 6 columns
 	int player; // the current player, 0 or 1
 	int score[2]; // the score of each player
+   char playerA[USERNAME_SIZE];
+   char playerB[USERNAME_SIZE];
 } AwaleGame;
 
 typedef struct Match {
