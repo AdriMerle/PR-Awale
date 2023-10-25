@@ -311,14 +311,6 @@ static void challenge(Client* clients, Client* client, int actual, char* buffer,
    client->opponent = opponent;
 }
 
-static void display_match_player_observer(Match* match, Client* client){
-   write_client(client->sock, "Une partie est en cours entre ");
-   write_client(client->sock, match->game->playerA);
-   write_client(client->sock, " et ");
-   write_client(client->sock, match->game->playerB);
-   write_client(client->sock, ".\n");
-}
-
 static void analyze_message(Client* clients, Client* client, int actual, char* buffer, int nb_char) {
    char username[USERNAME_SIZE];
    Client* client2;
@@ -397,7 +389,6 @@ static void analyze_message(Client* clients, Client* client, int actual, char* b
             write_client(client->sock, "\r\n/h : Affiche la liste des commandes");
             break;
          case 'm' : // Send private message
-            
             int i = 3; // Get starting index of private message
             while(buffer[i]!=' ') {
                i++;
@@ -427,7 +418,18 @@ static void analyze_message(Client* clients, Client* client, int actual, char* b
             break;
          case 'o': // To observe the match of a player
             // Syntax : /o [username]
-
+            strncpy(username, &buffer[3], nb_char);
+            username[nb_char - 3] = '\0';
+            client2 = find_client_by_name(clients, actual, username);
+            if(client2==NULL) {
+               write_client(client->sock, "Aucun joueur avec ce nom :/");
+            } else if (client2->match_en_cours==NULL) {
+               write_client(client->sock, "Ce joueur n'a aucune partie en cours :(");
+            } else {
+               // Ajouter client à la liste des observateurs
+               client2->match_en_cours->sockObservers[client2->match_en_cours->nb_observers] = client->sock;
+               client2->match_en_cours->nb_observers++;
+            }
             break;
          case 'p':
             if (client->match_en_cours==NULL){
@@ -446,7 +448,7 @@ static void analyze_message(Client* clients, Client* client, int actual, char* b
                } else if (code==-1){
                   write_client(client->sock, "Coup invalide. Donnez un chiffre entre 1 et 6.");
                } else {
-                  display_match_player(client);
+                  display_match(client);
                   int resultat = get_winner(client->match_en_cours->game);
                   if (resultat==0){
                      write_client(client->sock, "Vous avez gagné !");
@@ -466,6 +468,27 @@ static void analyze_message(Client* clients, Client* client, int actual, char* b
                }
             }
             break;
+         case 'q': // Arrêter d'être observateur
+            // Syntax : /q [username]
+            strncpy(username, &buffer[3], nb_char);
+            username[nb_char - 3] = '\0';
+            client2 = find_client_by_name(clients, actual, username);
+            if(client2==NULL) {
+               write_client(client->sock, "Aucun joueur avec ce nom :/");
+            } else if (client2->match_en_cours==NULL) {
+               write_client(client->sock, "Ce joueur n'a aucune partie en cours :(");
+            } else {
+               // Retirer client de la liste des observateurs et décaler les observateurs restants
+               int i = 0;
+               while (client2->match_en_cours->sockObservers[i]!=client->sock){
+                  i++;
+               }
+               for (int j = i; j < client2->match_en_cours->nb_observers-1; j++){
+                  client2->match_en_cours->sockObservers[j] = client2->match_en_cours->sockObservers[j+1];
+               }
+               client2->match_en_cours->nb_observers--;
+            }
+            break;
          case 'y': // Accept challenge
             if (client->opponent != NULL){
                printf("Une partie est lancée entre %s et %s !\n", client->name, client->opponent->name);
@@ -478,7 +501,7 @@ static void analyze_message(Client* clients, Client* client, int actual, char* b
                match->en_cours = 1;
                add_head(&head, match);
                init_game(match->game, client->name, client->opponent->name);
-               display_match_player(client);
+               display_match(client);
             }else {
                write_client(client->sock, "Tu n'as aucune invitation en cours :(");
             }
@@ -493,7 +516,8 @@ static void analyze_message(Client* clients, Client* client, int actual, char* b
    }
    memset(buffer, 0, sizeof(buffer));
 }
-static void display_match_player(Client* client){
+
+static void display_match(Client* client){
    char board[BUF_SIZE];
    memset(board, 0, sizeof(board));
    get_board(client->match_en_cours->game, board);
@@ -505,6 +529,11 @@ static void display_match_player(Client* client){
    } else {
       write_client(client->opponent->sock, "A toi de jouer !");
       write_client(client->sock, "En attente du coup de l'adversaire.");   
+   }
+   
+   // envoyer le plateau à tous les observateurs
+   for (int i = 0; i < client->match_en_cours->nb_observers; i++){
+      write_client(client->match_en_cours->sockObservers[i], board);
    }
 }
 

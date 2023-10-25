@@ -1,5 +1,6 @@
 #define USERNAME_SIZE 20
 #define BUF_SIZE    1024
+#define MAX_OBSERVERS 10
 typedef int SOCKET;
 
 #include <stdio.h>
@@ -18,6 +19,8 @@ typedef struct Match {
 	AwaleGame* game;
 	struct Match* next;
    int en_cours;
+   SOCKET sockObservers[MAX_OBSERVERS];
+   int nb_observers;
 } Match;
 
 typedef struct Client

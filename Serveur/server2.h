@@ -52,7 +52,6 @@ static void send_usernames_to_client(Client *clients, SOCKET sock, int actual);
 static void analyze_message(Client* clients, Client* client, int actual, char* buffer, int nb_char);
 static Client* find_client_by_name(Client* clients, int actual, char* username);
 static void challenge(Client* clients, Client* client, int actual, char* buffer, int nb_char);
-static void display_match_player(Client* client);
-static void display_match_observer(Match* match, Client* client);
+static void display_match(Client* client);
 
 #endif /* guard */
