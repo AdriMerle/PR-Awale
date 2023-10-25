@@ -10,7 +10,7 @@ void display(Match* head){
     else printf("End of list.\r\n");
 }
 
-void add_head(Match* head, Match* new){
+void add_head(Match* head, Match* elem){
     new->next=head; 
     head=new;
 }
