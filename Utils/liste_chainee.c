@@ -47,6 +47,7 @@ void clear_all_matches(Match* head){
     while(p!=NULL){//while not at the end
         temp = p;
         p = p->next;
+        free(temp->game));
         free(temp);
     }
 }
