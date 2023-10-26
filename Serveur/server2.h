@@ -54,8 +54,6 @@ static Client* find_client_by_name(Client* clients, int actual, char* username);
 static void challenge(Client* clients, Client* client, int actual, char* buffer, int nb_char);
 static void display_match(Client* client);
 static void display_help(Client* client);
-void swap(Client *a, Client *b);
-void bubble_sort(Client *clients, int actual);
-void display_ranking(Client *clients, int actual);
+void display_ranking(Client *clients, SOCKET sock, int actual);
 
 #endif /* guard */

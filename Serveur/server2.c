@@ -42,6 +42,7 @@ static void app(void)
 
    while(1)
    {
+      memset(buffer, 0, BUF_SIZE);
       int i = 0;
       FD_ZERO(&rdfs);
 
@@ -98,6 +99,7 @@ static void app(void)
          Client c = { csock };
          strncpy(c.name, buffer, USERNAME_SIZE - 1);
          c.name[nb_char] = '\0';
+         c.score = 0;
          clients[actual] = c;
          actual++;
          printf("Server : [%s] s'est connecté.\n", c.name);
@@ -106,7 +108,6 @@ static void app(void)
          strncat(buffer, c.name, USERNAME_SIZE - 1);
          strncat(buffer, " connected !", BUF_SIZE - strlen(buffer) - 1);
          send_message_to_all_clients(clients, &c, actual, buffer, 1);
-         memset(buffer, 0, BUF_SIZE);
       }
       else
       {
@@ -116,22 +117,29 @@ static void app(void)
             /* a client is talking */
             if(FD_ISSET(clients[i].sock, &rdfs))
             {
-               Client* client = &clients[i];
                int c = read_client(clients[i].sock, buffer);
                /* client disconnected */
                if(c == 0)
                {
+                  printf("Server : [%s] s'est déconnecté.\n", clients[i].name);
                   closesocket(clients[i].sock);
+                  if (clients[i].opponent != NULL){
+                     clients[i].opponent->score += 1;
+                     clients[i].opponent->match_en_cours->en_cours = 0;
+                     clients[i].opponent->match_en_cours = NULL;
+                     clients[i].opponent->opponent = NULL;
+                     write_client(clients[i].opponent->sock, "L'adversaire s'est déconnecté : vous avez gagné !\n");
+                  }
                   strncpy(buffer, "[Server] ", USERNAME_SIZE - 1);
                   strncat(buffer, clients[i].name, USERNAME_SIZE - 1);
                   strncat(buffer, " disconnected !", BUF_SIZE - strlen(buffer) - 1);
-                  send_message_to_all_clients(clients, &client, actual, buffer, 1);
+                  send_message_to_all_clients(clients, &clients[i], actual, buffer, 1);
                   remove_client(clients, i, &actual);
-                  memset(buffer, 0, BUF_SIZE);
                }
                else
                {
-                  analyze_message(clients, client, actual, buffer, c);
+                  printf("Analyze message\n");
+                  analyze_message(clients, &clients[i], actual, buffer, c);
                }
                break;
             }
@@ -298,48 +306,47 @@ static Client* find_client_by_name(Client* clients, int actual, char* username) 
 }
 
 static void challenge(Client* clients, Client* client, int actual, char* buffer, int nb_char){
-   char username[USERNAME_SIZE];
-   strncpy(username, &buffer[3], nb_char);
-#ifdef TRACE
-   printf("Nombre de charactère dans la commande /c : %d \n", nb_char);
-#endif
-   username[nb_char - 3] = '\0';
-   Client* opponent = find_client_by_name(clients, actual, username);
-   if(opponent==NULL) {
-      write_client(client->sock, "Aucun joueur avec ce nom :/");
-      return;
-   }else if (opponent->opponent != NULL){
-      write_client(client->sock, "Ce joueur est déjà en train de jouer :(");
-      return;
+
+}
+
+void copy_client(Client* dest, Client* src) {
+   dest->sock = src->sock;
+   dest->score = src->score;
+   dest->opponent = src->opponent;
+   dest->match_en_cours = src->match_en_cours;
+   dest->player_id = src->player_id;
+   strncpy(dest->name, src->name, sizeof(dest->name));
+   strncpy(dest->description, src->description, sizeof(dest->description));
+
+   // change the opponent's opponent to the new client
+   if (dest->opponent != NULL) {
+      dest->opponent->opponent = dest;
    }
-   char message[BUF_SIZE] = "Le joueur ";
-   strncat(message, client->name, sizeof message - strlen(message) - 1);
-   strncat(message, " vous défie ! Acceptez-vous (/y ou /n) ?", sizeof message - strlen(message) - 1);
-   write_client(opponent->sock, message);
-   opponent->opponent = client;
-   client->opponent = opponent;
 }
 
-void swap(Client *a, Client *b) {
-    Client temp = *a;
-    *a = *b;
-    *b = temp;
-}
-
-void bubble_sort(Client *clients, int actual) {
-    for (int i = 0; i < actual - 1; i++) {
-        for (int j = 0; j < actual - i - 1; j++) {
-            if (clients[j].score > clients[j + 1].score) {
-                swap(&clients[j], &clients[j + 1]);
-            }
-        }
-    }
-}
-
-void display_ranking(Client *clients, int actual) {
-    for (int i = 0; i < actual; i++) {
-        printf("Name: %s, Score: %d\n", clients[i].name, clients[i].score);
-    }
+void sort_and_display_ranking(Client *clients, SOCKET sock, int actual) {
+   int i, j;
+   Client temp;
+   for (i = 0; i < actual - 1; i++) {
+      for (j = 0; j < actual - i - 1; j++) {
+         if (clients[j].score < clients[j + 1].score) {
+            copy_client(&temp, &clients[j]);
+            copy_client(&clients[j], &clients[j + 1]);
+            copy_client(&clients[j + 1], &temp);
+         }
+      }
+   }
+   char message[BUF_SIZE] = "";
+   for (int i = 0; i < actual; i++) {
+      printf("Name: %s, Score: %d\n", clients[i].name, clients[i].score);
+      strcat(message, clients[i].name);
+      strcat(message, " : ");
+      char score[10];
+      sprintf(score, "%d", clients[i].score);
+      strcat(message, score);
+      strcat(message, "\n");
+   }
+   write_client(sock, message);
 }
 
 static void analyze_message(Client* clients, Client* client, int actual, char* buffer, int nb_char) {
@@ -373,8 +380,32 @@ static void analyze_message(Client* clients, Client* client, int actual, char* b
 #endif
             if (client->opponent != NULL){
                write_client(client->sock, "Tu as déjà une invitation en cours :(");
-            }else {
-               challenge(clients, client, actual, buffer, nb_char);
+               // Un client ne peut pas se défier lui-même
+            } else {
+               char username[USERNAME_SIZE];
+               strncpy(username, &buffer[3], nb_char);
+               username[nb_char - 3] = '\0';
+               if(strcmp(client->name, username)==0){
+                  write_client(client->sock, "Tu ne peux pas te défier toi-même :(\n");
+               } else {
+#ifdef TRACE
+                  printf("Nombre de charactère dans la commande /c : %d \n", nb_char);
+#endif
+                  Client* opponent = find_client_by_name(clients, actual, username);
+                  if(opponent==NULL) {
+                     write_client(client->sock, "Aucun joueur avec ce nom :/");
+                     return;
+                  }else if (opponent->opponent != NULL){
+                     write_client(client->sock, "Ce joueur est déjà en train de jouer :(");
+                     return;
+                  }
+                  char message[BUF_SIZE] = "Le joueur ";
+                  strncat(message, client->name, sizeof message - strlen(message) - 1);
+                  strncat(message, " vous défie ! Acceptez-vous (/y ou /n) ?", sizeof message - strlen(message) - 1);
+                  write_client(opponent->sock, message);
+                  opponent->opponent = client;
+                  client->opponent = opponent;
+               }
             }
             break;
          case 'd': // Display all players name
@@ -439,20 +470,24 @@ static void analyze_message(Client* clients, Client* client, int actual, char* b
             break;
          case 'o': // To observe the match of a player
             // Syntax : /o [username]
-            strncpy(username, &buffer[3], nb_char);
-            username[nb_char - 3] = '\0';
-            client2 = find_client_by_name(clients, actual, username);
-            if(client2==NULL) {
-               write_client(client->sock, "Aucun joueur avec ce nom :/");
-            } else if (client2->match_en_cours==NULL) {
-               write_client(client->sock, "Ce joueur n'a aucune partie en cours :(");
-            } else if(client2->match_en_cours->nb_observers==MAX_OBSERVERS){
-               write_client(client->sock, "La partie est déjà observée par le nombre maximum d'observateurs :(");
-               break;
-            } else { // Ajouter client à la liste des observateurs
-               client2->match_en_cours->sockObservers[client2->match_en_cours->nb_observers] = client->sock;
-               client2->match_en_cours->nb_observers++;
-               write_client(client->sock, "Vous avez été ajouté à la liste des observateurs !");
+            if (client->match_en_cours == NULL) {
+               strncpy(username, &buffer[3], nb_char);
+               username[nb_char - 3] = '\0';
+               client2 = find_client_by_name(clients, actual, username);
+               if(client2==NULL) {
+                  write_client(client->sock, "Aucun joueur avec ce nom :/");
+               } else if (client2->match_en_cours==NULL) {
+                  write_client(client->sock, "Ce joueur n'a aucune partie en cours :(");
+               } else if(client2->match_en_cours->nb_observers==MAX_OBSERVERS){
+                  write_client(client->sock, "La partie est déjà observée par le nombre maximum d'observateurs :(");
+                  break;
+               } else { // Ajouter client à la liste des observateurs
+                  client2->match_en_cours->sockObservers[client2->match_en_cours->nb_observers] = client->sock;
+                  client2->match_en_cours->nb_observers++;
+                  write_client(client->sock, "Vous avez été ajouté à la liste des observateurs !");
+               }
+            }else{
+               write_client(client->sock, "Action impossible, tu as déjà une partie en cours :(\n");
             }
             break;
          case 'p':
@@ -517,7 +552,9 @@ static void analyze_message(Client* clients, Client* client, int actual, char* b
             }
             break;
          case 'r' : // Get ranking of all players
-            
+            // Demo : client->score += 1;
+            sort_and_display_ranking(clients, client->sock, actual);
+            break;
          case 'y': // Accept challenge
             if (client->opponent != NULL){
                printf("Une partie est lancée entre %s et %s !\n", client->name, client->opponent->name);
