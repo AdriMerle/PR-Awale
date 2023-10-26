@@ -1,7 +1,7 @@
 # PR-Awale
 Une implémentation d'une application client/server du jeu Awale.
 
-Par Antonin Sibileau et Adrian Merle.
+Par Antonin S et Adrian M.
 
 # Lancement de l'application
 **Côté serveur :**
