@@ -30,5 +30,6 @@ typedef struct Client
    struct Client* opponent;
    struct Match* match_en_cours; 
    int player_id;
+   int score;
    char description[BUF_SIZE];
 } Client;

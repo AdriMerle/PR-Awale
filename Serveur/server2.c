@@ -102,12 +102,17 @@ static void app(void)
          actual++;
          printf("Server : [%s] s'est connecté.\n", c.name);
          write_client(csock, "[Server] Vous êtes connecté !\n");
+         strncpy(buffer, "[Server] ", USERNAME_SIZE - 1);
+         strncat(buffer, c.name, USERNAME_SIZE - 1);
+         strncat(buffer, " connected !", BUF_SIZE - strlen(buffer) - 1);
+         send_message_to_all_clients(clients, &c, actual, buffer, 1);
+         memset(buffer, 0, BUF_SIZE);
       }
       else
       {
          int i = 0;
          for(i = 0; i < actual; i++)
-         {
+         {  
             /* a client is talking */
             if(FD_ISSET(clients[i].sock, &rdfs))
             {
@@ -117,10 +122,12 @@ static void app(void)
                if(c == 0)
                {
                   closesocket(clients[i].sock);
-                  remove_client(clients, i, &actual);
-                  strncpy(buffer, client->name, USERNAME_SIZE - 1);
+                  strncpy(buffer, "[Server] ", USERNAME_SIZE - 1);
+                  strncat(buffer, clients[i].name, USERNAME_SIZE - 1);
                   strncat(buffer, " disconnected !", BUF_SIZE - strlen(buffer) - 1);
                   send_message_to_all_clients(clients, &client, actual, buffer, 1);
+                  remove_client(clients, i, &actual);
+                  memset(buffer, 0, BUF_SIZE);
                }
                else
                {
@@ -171,6 +178,8 @@ static void send_message_to_all_clients(Client *clients, Client* sender, int act
          }
          strncat(message, buffer, sizeof message - strlen(message) - 1);
          write_client(clients[i].sock, message);
+         memset(message, 0, sizeof(message));
+         printf("Server : Message to %s from %s\n", clients[i].name, sender->name);
       }
    }
 }
@@ -311,6 +320,28 @@ static void challenge(Client* clients, Client* client, int actual, char* buffer,
    client->opponent = opponent;
 }
 
+void swap(Client *a, Client *b) {
+    Client temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+void bubble_sort(Client *clients, int actual) {
+    for (int i = 0; i < actual - 1; i++) {
+        for (int j = 0; j < actual - i - 1; j++) {
+            if (clients[j].score > clients[j + 1].score) {
+                swap(&clients[j], &clients[j + 1]);
+            }
+        }
+    }
+}
+
+void display_ranking(Client *clients, int actual) {
+    for (int i = 0; i < actual; i++) {
+        printf("Name: %s, Score: %d\n", clients[i].name, clients[i].score);
+    }
+}
+
 static void analyze_message(Client* clients, Client* client, int actual, char* buffer, int nb_char) {
    char username[USERNAME_SIZE] = "";
    char message[BUF_SIZE] = "";
@@ -446,6 +477,8 @@ static void analyze_message(Client* clients, Client* client, int actual, char* b
                   if (resultat==0){
                      write_client(client->sock, "Vous avez gagné !");
                      write_client(client->opponent->sock, "Vous avez perdu :(");
+                     client->opponent->score -= 1;
+                     client->score += 1;
                      client->opponent->opponent = NULL;
                      client->opponent = NULL;
                      client->match_en_cours->en_cours = 0;
@@ -483,6 +516,8 @@ static void analyze_message(Client* clients, Client* client, int actual, char* b
                write_client(client->sock, "Vous avez été retiré de la liste des observateurs !");
             }
             break;
+         case 'r' : // Get ranking of all players
+            
          case 'y': // Accept challenge
             if (client->opponent != NULL){
                printf("Une partie est lancée entre %s et %s !\n", client->name, client->opponent->name);
@@ -548,3 +583,4 @@ static void display_help(Client* client) {
    strcat(message, "/y : Accepte une invitation\n");
    write_client(client->sock, message);
 }
+
