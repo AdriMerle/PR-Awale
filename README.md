@@ -3,12 +3,19 @@ Une implémentation d'une application client/server du jeu Awale.
 
 Par Antonin S et Adrian M.
 
+# Compilation
+**Côté serveur :**
+make server
+
+**Côté client :**
+make client
+
 # Lancement de l'application
 **Côté serveur :**
 ./server
 
 **Côté client :**
-./client [AdresseServeur] [NomD'Utilisateur]
+./client [AdresseServeur] [username]
 
 # Liste des commandes
 
@@ -25,4 +32,5 @@ Par Antonin S et Adrian M.
 | /o [username] | Observe la partie du joueur 'username' |
 | /p [1-6] | Joue le coup [1-6] |
 | /q [username] | Arrête d'observer la partie du joueur 'username' |
+| /r | Affiche le classement des joueurs |
 | /y | Accepte une invitation |

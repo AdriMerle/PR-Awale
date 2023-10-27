@@ -88,9 +88,12 @@ int play_move(AwaleGame* game, int column) {
 	}
 
 	// Check if the column is valid
-	if (column < 0 || column > 5 || game->board[game->player][column] == 0) {
-		printf("Invalid move!\n");
+	if (column < 0 || column > 5) {
+		printf("Invalid move! You must play a number between 1 and 6.\n");
 		return -1;
+	} else if (game->board[game->player][column] == 0) {
+		printf("Invalid move! The hole is empty!\n");
+		return -3;
 	}
 
 	// Make a copy of the game
@@ -152,19 +155,18 @@ int get_winner(AwaleGame* game) {
 		sumA += game->board[0][i];
 		sumB += game->board[1][i];
 	}
-	if (sumA > 0 && sumB > 0) {
+	if(game->score[0] >= 25 || game->score[1] >= 25) {
+		return 0;
+	} else if (sumA > 0 && sumB > 0) {
 		return -1;
-	} 
-	else {
+	} else {
 		game->score[0] += sumB;
 		game->score[1] += sumA;
 	}
 
 	// Compute the winner
-	if (game->score[0] > game->score[1]) {
+	if (game->score[0] > game->score[1] || game->score[1] > game->score[0]) {
 		return 0;
-	} else if (game->score[1] > game->score[0]) {
-		return 1;
 	} else { // tie
 		return -2;
 	}

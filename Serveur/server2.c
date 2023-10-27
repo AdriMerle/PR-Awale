@@ -138,7 +138,6 @@ static void app(void)
                }
                else
                {
-                  printf("Analyze message\n");
                   analyze_message(clients, &clients[i], actual, buffer, c);
                }
                break;
@@ -499,33 +498,17 @@ static void analyze_message(Client* clients, Client* client, int actual, char* b
                break;
             }else{
                int code = play_move(client->match_en_cours->game, atoi(&buffer[3])-1);
-   #ifdef TRACE
+#ifdef TRACE
                printf("play code = %d\n", code);
-   #endif
+#endif
                if (code==0){
                   write_client(client->sock, "Coup invalide. L'opposant serait affamé");
                } else if (code==-1){
                   write_client(client->sock, "Coup invalide. Donnez un chiffre entre 1 et 6.");
+               } else if (code==-3){
+                  write_client(client->sock, "Coup invalide. Le trou est vide.");
                } else {
                   display_match(client);
-                  int resultat = get_winner(client->match_en_cours->game);
-                  if (resultat==0){
-                     write_client(client->sock, "Vous avez gagné !");
-                     write_client(client->opponent->sock, "Vous avez perdu :(");
-                     client->opponent->score -= 1;
-                     client->score += 1;
-                     client->opponent->opponent = NULL;
-                     client->opponent = NULL;
-                     client->match_en_cours->en_cours = 0;
-                     client->match_en_cours = NULL;
-                  }else if (resultat==-2){   
-                     write_client(client->sock, "Egalité !");
-                     write_client(client->opponent->sock, "Egalité !");
-                     client->opponent->opponent = NULL;
-                     client->opponent = NULL;
-                     client->match_en_cours->en_cours = 0;
-                     client->match_en_cours = NULL;
-                  }
                }
             }
             break;
@@ -559,6 +542,7 @@ static void analyze_message(Client* clients, Client* client, int actual, char* b
             if (client->opponent != NULL){
                printf("Une partie est lancée entre %s et %s !\n", client->name, client->opponent->name);
                Match* match = (Match*) malloc(sizeof(Match));
+               match->nb_observers = 0;
                client->match_en_cours = match;
                client->opponent->match_en_cours = match;
                client->player_id = 0;
@@ -589,17 +573,44 @@ static void display_match(Client* client){
    get_board(client->match_en_cours->game, board);
    write_client(client->sock, board);
    write_client(client->opponent->sock, board);
-   if(client->match_en_cours->game->player==client->player_id){
-      write_client(client->sock, "A toi de jouer !");
-      write_client(client->opponent->sock, "En attente du coup de l'adversaire.");
-   } else {
-      write_client(client->opponent->sock, "A toi de jouer !");
-      write_client(client->sock, "En attente du coup de l'adversaire.");   
-   }
-   
+
+   int resultat = get_winner(client->match_en_cours->game);
    // envoyer le plateau à tous les observateurs
    for (int i = 0; i < client->match_en_cours->nb_observers; i++){
       write_client(client->match_en_cours->sockObservers[i], board);
+      if (resultat==0){
+         write_client(client->match_en_cours->sockObservers[i], client->name);
+         write_client(client->match_en_cours->sockObservers[i], " a gagné !");
+      } else if (resultat==-2){
+         write_client(client->match_en_cours->sockObservers[i], "Egalité !");
+      }
+   }
+   if (resultat==0){
+      write_client(client->sock, "Vous avez gagné !");
+      write_client(client->opponent->sock, "Vous avez perdu :(");
+      client->opponent->score -= 1;
+      client->score += 1;
+      client->match_en_cours->en_cours = 0;
+      client->match_en_cours = NULL;
+      client->opponent->match_en_cours = NULL;
+      client->opponent->opponent = NULL;
+      client->opponent = NULL;
+   }else if (resultat==-2){   
+      write_client(client->sock, "Egalité !");
+      write_client(client->opponent->sock, "Egalité !");
+      client->match_en_cours->en_cours = 0;
+      client->match_en_cours = NULL;
+      client->opponent->match_en_cours = NULL;
+      client->opponent->opponent = NULL;
+      client->opponent = NULL;
+   } else {
+      if(client->match_en_cours->game->player==client->player_id){
+         write_client(client->sock, "A toi de jouer !");
+         write_client(client->opponent->sock, "En attente du coup de l'adversaire.");
+      } else {
+         write_client(client->opponent->sock, "A toi de jouer !");
+         write_client(client->sock, "En attente du coup de l'adversaire.");   
+      }
    }
 }
 
@@ -617,6 +628,7 @@ static void display_help(Client* client) {
    strcat(message, "/o [username] : Observe la partie du joueur 'username'\n");
    strcat(message, "/p [1-6] : Joue le coup [1-6]\n");
    strcat(message, "/q [username] : Arrête d'observer la partie du joueur 'username'\n");
+   strcat(message, "/r : Affiche le classement des joueurs\n");
    strcat(message, "/y : Accepte une invitation\n");
    write_client(client->sock, message);
 }
